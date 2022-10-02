@@ -6,6 +6,10 @@ from django.contrib.auth import get_user_model
 
 from core import models
 
+def create_user(email = 'test@example.com', password = 'testpassword123'):
+    """Create and return a new user."""
+    return get_user_model().objects.create_user(email, password)
+
 class ModelTests(TestCase):
     """Test models"""
 
@@ -49,3 +53,18 @@ class ModelTests(TestCase):
         )
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_Post(self):
+        """Test creating a post is successful"""
+        user = get_user_model().objects.create_user(
+            'test@example.com',
+            'testpassword123',
+        )
+        post = models.Post.objects.create(
+            user = user,
+            title = 'Sample Test Title',
+            description = 'Sample Test Description',
+            img_description = 'http://image.png',
+            slug = 'sample-slug'
+        )
+        self.assertEqual(str(post), post.title)
