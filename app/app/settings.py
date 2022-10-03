@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'core',
     'drf_spectacular',
     'user',
-    'blog',
+    'post',
 ]
 
 MIDDLEWARE = [
