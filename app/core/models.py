@@ -58,6 +58,8 @@ class Post(models.Model):
     img_description = models.URLField()
     slug = models.CharField(max_length=255)
 
+    authors = models.ManyToManyField('Author')
+
     def __str__(self):
         return self.title
 
@@ -75,4 +77,3 @@ class Author(models.Model):
 
     def __str__(self):
         return self.name
-        

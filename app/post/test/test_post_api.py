@@ -9,7 +9,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Post
+from core.models import Author, Post
 from post.serializers import PostSerializer
 
 POST_URL = reverse('post:post-list')
@@ -189,23 +189,171 @@ class PrivatePostAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Post.objects.filter(id = post.id).exists())
 
-    # def test_create_post_with_new_authors(self):
-    #     """Test creating a post with new authors"""
-    #     payload = {
-    #         'title' : 'Sample Test Author',
-    #         'description' : 'Sample Test Description',
-    #         'img_description' : 'http://example.com',
-    #         'slug' : 'slug-test',
-    #         'authors' : [
-    #             {
-    #                 'name' : 'Jesus',
-    #                 'link' : 'http://example.com',
-    #                 'facebook_link' : 'http://example-facebook.com'
-    #             },
-    #             {
-    #                 'name' :  'Sample Name',
-    #                 'link' : 'http://example2.com',
-    #                 'facebook_link' : 'https://example-facebook2.com'
-    #             }
-    #         ]
-    #     }
+    def test_create_post_with_new_authors(self):
+        """Test creating a post with new authors"""
+        payload = {
+            'title' : 'Sample Test Author',
+            'description' : 'Sample Test Description',
+            'img_description' : 'http://example.com',
+            'slug' : 'slug-test',
+            'authors' : [
+                {
+                    'name' : 'Jesus',
+                    'link' : 'http://example.com',
+                    'profile_picture' : 'http://example-facebook.com',
+                    'description' : 'Sample Test Description 1'
+                },
+                {
+                    'name' :  'Sample Name',
+                    'link' : 'http://example2.com',
+                    'profile_picture' : 'https://example-facebook2.com',
+                    'description' : 'Sample Test Description 2',
+                }
+            ]
+        }
+
+        res = self.client.post(POST_URL, payload, format = 'json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        posts = Post.objects.filter(user = self.user)
+        self.assertEqual(posts.count(), 1)
+        post = posts[0]
+
+        self.assertEqual(post.authors.count(), 2)
+        for author in payload['authors']:
+            exists = post.authors.filter(
+                name = author['name'],
+                link = author['link'],
+                profile_picture = author['profile_picture'],
+                description = author['description'],
+                user = self.user,
+            ).exists()
+            self.assertTrue(exists)
+
+    def test_create_post_with_existing_authors(self):
+        """Test creating a post with existing author"""
+        raul_author = Author.objects.create(
+            user = self.user,
+            name = 'Raul',
+            link = 'http://www.raul.com',
+            profile_picture = 'http://www.profile.com',
+            description = 'Sample Test Description Raul',
+        )
+        payload = {
+            'title' : 'Sample Test Author',
+            'description' : 'Sample Test Description',
+            'img_description' : 'http://example.com',
+            'slug' : 'slug-test',
+            'authors' : [
+                {
+                    'name' : 'Raul',
+                    'link' : 'http://www.raul.com',
+                    'profile_picture' : 'http://www.profile.com',
+                    'description' : 'Sample Test Description Raul'
+                },
+                {
+                    'name' :  'Sample Name',
+                    'link' : 'http://example2.com',
+                    'profile_picture' : 'https://example-facebook2.com',
+                    'description' : 'Sample Test Description 2',
+                }
+            ]
+        }
+        res = self.client.post(POST_URL, payload, format = 'json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        
+        posts = Post.objects.filter(user = self.user)
+        self.assertEqual(posts.count(), 1)
+        post = posts[0]
+        self.assertEqual(post.authors.count(), 2)
+        self.assertIn(raul_author, post.authors.all())
+        for author in payload['authors']:
+            exists = post.authors.filter(
+                name = author['name'],
+                link = author['link'],
+                profile_picture = author['profile_picture'],
+                description = author['description'],
+                user = self.user,
+            ).exists()
+            self.assertTrue(exists)
+    
+    def test_create_author_on_update(self):
+        """Test create a new author updating a post"""
+        post = create_post(user = self.user)
+
+        payload = {
+            'authors' : [
+                {
+                    'name' : 'Jesus',
+                    'link' : 'http://example.com',
+                    'profile_picture' : 'http://example-facebook.com',
+                    'description' : 'Sample Test Description 1'
+                }
+            ]
+        }
+        url = detail_url(post.id)
+        res = self.client.patch(url, payload, format = 'json')
+        
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_author = Author.objects.get(user = self.user, name = 'Jesus')
+        self.assertIn(new_author, post.authors.all())
+        
+    
+    def test_update_post_assign_author(self):
+        """Test assigning an existing author when updating a post"""
+        author1 = Author.objects.create(
+            user = self.user,
+            name = 'Author 1',
+            link = 'http://www.author1.com',
+            profile_picture = 'http://www.profile-picture1.com',
+            description = 'Sample Test Description Author 1',
+        )
+        post = create_post(user = self.user)
+        post.authors.add(author1)
+
+
+
+        author2 = Author.objects.create(
+            user = self.user,
+            name = 'Author 2',
+            link = 'http://www.author2.com',
+            profile_picture = 'http://www.profile-picture2.com',
+            description = 'Sample Test Description Author 2',
+        )
+        payload = {
+            'authors' : [
+                {
+                    'name' : 'Author 2',
+                    'link' : 'http://www.author2.com',
+                    'profile_picture' : 'http://www.profile-picture2.com',
+                    'description' : 'Sample Test Description Author 2',
+                }
+            ]
+        }
+        url = detail_url(post.id)
+        res = self.client.patch(url, payload, format = 'json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(author2, post.authors.all())
+        self.assertNotIn(author1, post.authors.all())
+
+    def test_clear_authors(self):
+        """Test clearing a post author list"""
+        author = Author.objects.create(
+            user = self.user,
+            name = 'Raul',
+            link = 'http://www.raul.com',
+            profile_picture = 'http://www.profile.com',
+            description = 'Sample Test Description Raul',
+        )
+        post = create_post(user = self.user)
+        post.authors.add(author)
+
+        payload = {'authors' : []}
+
+        url = detail_url(post.id)
+        res = self.client.patch(url, payload, format = 'json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(post.authors.count(), 0)
+        
