@@ -188,3 +188,24 @@ class PrivatePostAPITests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Post.objects.filter(id = post.id).exists())
+
+    # def test_create_post_with_new_authors(self):
+    #     """Test creating a post with new authors"""
+    #     payload = {
+    #         'title' : 'Sample Test Author',
+    #         'description' : 'Sample Test Description',
+    #         'img_description' : 'http://example.com',
+    #         'slug' : 'slug-test',
+    #         'authors' : [
+    #             {
+    #                 'name' : 'Jesus',
+    #                 'link' : 'http://example.com',
+    #                 'facebook_link' : 'http://example-facebook.com'
+    #             },
+    #             {
+    #                 'name' :  'Sample Name',
+    #                 'link' : 'http://example2.com',
+    #                 'facebook_link' : 'https://example-facebook2.com'
+    #             }
+    #         ]
+    #     }

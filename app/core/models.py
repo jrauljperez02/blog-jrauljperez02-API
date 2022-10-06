@@ -1,3 +1,4 @@
+import profile
 from django.db import models
 
 # Create your models here.
@@ -59,3 +60,19 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Author(models.Model):
+    """Author model objects."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete = models.CASCADE,
+    )
+    name = models.CharField(max_length=255)
+    link = models.URLField()
+    profile_picture = models.URLField()
+    description = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+        

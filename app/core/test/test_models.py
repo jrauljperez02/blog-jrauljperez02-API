@@ -68,3 +68,15 @@ class ModelTests(TestCase):
             slug = 'sample-slug'
         )
         self.assertEqual(str(post), post.title)
+
+    def test_create_author(self):
+        """Test creating a new author is successful"""
+        user = create_user()
+        author = models.Author.objects.create(
+            user = user, 
+            name = 'Sample Name',
+            link = 'http://example.com',
+            profile_picture = 'http://example.png',
+            description = 'Sample Test Description',
+        )
+        self.assertEqual(str(author), author.name)
